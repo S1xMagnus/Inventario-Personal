@@ -76,26 +76,30 @@
     .poster-card:hover,
     .poster-card:focus-within {
       transform: translateY(-4px) scale(1.015);
-      box-shadow: 0 20px 60px rgba(0,0,0,0.8);
+      box-shadow: 0 20px 60px rgba(0,0,0,0.8), 0 0 0 1px rgba(201,168,76,0.18);
       z-index: 10;
     }
+    .poster-card:focus-visible { outline: 2px solid #c9a84c; outline-offset: 2px; }
     .poster-card img {
       width: 100%; height: 100%;
       object-fit: cover;
       display: block;
     }
+    /* Title stays visible at all times (works on touch devices too, no JS needed);
+       extra meta/stars reveal on hover or keyboard focus. */
     .poster-card .overlay {
       position: absolute; inset: 0;
-      background: linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.4) 50%, transparent 100%);
-      opacity: 0;
-      transition: opacity 0.35s ease;
+      background: linear-gradient(to top, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.25) 45%, transparent 75%);
+      transition: background 0.35s ease;
       display: flex;
       flex-direction: column;
       justify-content: flex-end;
-      padding: 14px 12px 12px;
+      padding: 12px 10px 10px;
     }
     .poster-card:hover .overlay,
-    .poster-card.touch-active .overlay { opacity: 1; }
+    .poster-card:focus-within .overlay {
+      background: linear-gradient(to top, rgba(0,0,0,0.96) 0%, rgba(0,0,0,0.45) 55%, transparent 100%);
+    }
 
     .poster-card .overlay h3 {
       font-family: 'Montserrat', sans-serif;
@@ -104,7 +108,25 @@
       letter-spacing: 0.04em;
       color: #e8e8e8;
       line-height: 1.3;
-      margin-bottom: 3px;
+      margin-bottom: 0;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .poster-card .overlay .meta,
+    .poster-card .overlay .stars {
+      max-height: 0;
+      opacity: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease, opacity 0.25s ease, margin-top 0.3s ease;
+    }
+    .poster-card:hover .overlay .meta,
+    .poster-card:focus-within .overlay .meta,
+    .poster-card:hover .overlay .stars,
+    .poster-card:focus-within .overlay .stars {
+      max-height: 20px;
+      opacity: 1;
     }
     .poster-card .overlay .meta {
       font-size: 0.6rem;
@@ -112,10 +134,11 @@
       color: #a0a0a0;
       letter-spacing: 0.06em;
     }
+    .poster-card:hover .overlay .meta,
+    .poster-card:focus-within .overlay .meta { margin-top: 3px; }
     .poster-card .overlay .stars {
       font-size: 0.65rem;
       color: #c9a84c;
-      margin-top: 4px;
       letter-spacing: 1px;
     }
 
@@ -283,14 +306,35 @@
       font-size: 0.72rem;
       font-weight: 400;
       letter-spacing: 0.05em;
-      padding: 10px 20px;
-      border-radius: 2px;
+      padding: 10px 10px 10px 20px;
+      border-radius: 3px;
       z-index: 500;
       opacity: 0;
       pointer-events: none;
       transition: opacity 0.3s, transform 0.3s;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      max-width: 90vw;
     }
-    #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); pointer-events: all; }
+    #toast-action {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 0.65rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #c9a84c;
+      background: rgba(201,168,76,0.1);
+      border: 1px solid rgba(201,168,76,0.3);
+      border-radius: 2px;
+      padding: 6px 12px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.2s;
+      flex-shrink: 0;
+    }
+    #toast-action:hover { background: rgba(201,168,76,0.2); }
 
     /* ── Input base ── */
     .inp {
@@ -340,21 +384,64 @@
     }
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* ── Mobile touch overlay ── */
-    @media (hover: none) {
-      .poster-card .overlay { opacity: 0; }
-      .poster-card.touch-active .overlay { opacity: 1; }
+    /* ── Keyboard focus (accessibility) ── */
+    .filter-btn:focus-visible,
+    .star-btn:focus-visible,
+    #toggle-search:focus-visible,
+    #close-search:focus-visible,
+    #modal-close:focus-visible,
+    #clear-collection-search:focus-visible,
+    button:focus-visible {
+      outline: 2px solid #c9a84c;
+      outline-offset: 2px;
+    }
+    .inp:focus-visible { outline: none; }
+
+    /* ── Toolbar (search + sort + filters) ── */
+    #toolbar { border-bottom: 1px solid #0c0c0c; }
+    .toolbar-search-icon {
+      position: absolute; left: 10px; top: 50%; transform: translateY(-50%);
+      color: #3d3d3d; pointer-events: none;
+    }
+    #collection-search { padding-left: 30px; padding-right: 30px; }
+    #clear-collection-search {
+      position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
+      width: 20px; height: 20px; display: flex; align-items: center; justify-content: center;
+      color: #6b6b6b; background: none; border: none; cursor: pointer; border-radius: 50%;
+      transition: color 0.2s;
+    }
+    #clear-collection-search:hover { color: #e8e8e8; }
+
+    /* ── Decorative ambient glow (subtle, keeps true blacks) ── */
+    .ambient-glow {
+      position: fixed; top: -120px; left: 50%; width: 700px; height: 320px;
+      transform: translateX(-50%);
+      background: radial-gradient(closest-side, rgba(201,168,76,0.07), transparent);
+      pointer-events: none; z-index: 1;
+    }
+
+    #toggle-search:hover { background: rgba(201,168,76,0.16) !important; border-color: rgba(201,168,76,0.5) !important; }
+
+    /* ── Section label above grid ── */
+    .section-label {
+      font-family: 'Michroma', sans-serif;
+      font-size: 0.6rem;
+      letter-spacing: 0.3em;
+      color: #3d3d3d;
+      text-transform: uppercase;
     }
   </style>
 </head>
 
 <body class="bg-amoled text-snow font-montserrat">
 
+<div class="ambient-glow" aria-hidden="true"></div>
+
 <header id="main-header"
   class="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 h-[72px]"
   style="background: rgba(0,0,0,0.9); backdrop-filter: blur(16px); border-bottom: 1px solid #0f0f0f;">
 
-  <div class="flex items-center gap-3">
+  <div class="flex items-center gap-3 relative z-10">
     <span class="font-michroma text-base tracking-[0.2em] text-snow">CINELOG</span>
     <span id="entry-count"
       class="text-[0.55rem] font-montserrat font-300 tracking-[0.15em] text-dim uppercase mt-0.5">
@@ -362,25 +449,17 @@
     </span>
   </div>
 
-  <div class="flex items-center gap-4">
-    <div class="hidden sm:flex items-center gap-1" id="filter-bar">
-      <button class="filter-btn active" data-filter="all">Todos</button>
-      <button class="filter-btn" data-filter="seen">Vistos</button>
-      <button class="filter-btn" data-filter="watching">Viendo</button>
-      <button class="filter-btn" data-filter="pending">Pendientes</button>
-    </div>
-
-    <button id="toggle-search"
-      class="w-9 h-9 flex items-center justify-center rounded-full transition-colors duration-200"
-      style="color:#6b6b6b; background: transparent;"
-      title="Añadir película o serie"
-      aria-label="Abrir buscador">
-      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
-           fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
-      </svg>
-    </button>
-  </div>
+  <button id="toggle-search"
+    class="flex items-center gap-2 h-9 pl-3 pr-4 rounded-full transition-all duration-200 relative z-10"
+    style="color:#c9a84c; background:rgba(201,168,76,0.08); border:1px solid rgba(201,168,76,0.3);"
+    title="Añadir película o serie"
+    aria-label="Añadir película o serie">
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+         fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+    </svg>
+    <span class="font-montserrat text-[0.65rem] font-500 tracking-[0.12em] uppercase">Añadir</span>
+  </button>
 </header>
 
 <div id="search-panel">
@@ -454,22 +533,50 @@
 </div>
 
 <main id="grid-wrapper">
-  <div class="flex sm:hidden items-center gap-1 px-4 pt-4 pb-2 flex-wrap" id="filter-bar-mobile">
-    <button class="filter-btn active" data-filter="all">Todos</button>
-    <button class="filter-btn" data-filter="seen">Vistos</button>
-    <button class="filter-btn" data-filter="watching">Viendo</button>
-    <button class="filter-btn" data-filter="pending">Pendientes</button>
+  <div id="toolbar" class="px-4 sm:px-6 pt-4 pb-3">
+    <p class="section-label mb-3">Mi colección</p>
+
+    <div class="flex flex-wrap items-center gap-2 mb-3">
+      <div class="relative flex-1 min-w-[160px] max-w-xs">
+        <svg class="toolbar-search-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+             fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+        </svg>
+        <input id="collection-search" type="text" class="inp text-[0.72rem]"
+          placeholder="Buscar en tu colección..." autocomplete="off" spellcheck="false"
+          aria-label="Buscar en tu colección" />
+        <button id="clear-collection-search" class="hidden" aria-label="Limpiar búsqueda">
+          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 6 6 18M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+
+      <select id="sort-select" class="inp text-[0.7rem] py-2 px-2 w-auto" aria-label="Ordenar colección">
+        <option value="recent">Recientes primero</option>
+        <option value="rating_desc">Mejor valoradas</option>
+        <option value="year_desc">Año: nuevo → antiguo</option>
+        <option value="alpha">Alfabético (A–Z)</option>
+      </select>
+    </div>
+
+    <div class="flex items-center gap-1 flex-wrap" id="filter-bar">
+      <button class="filter-btn active" data-filter="all">Todos</button>
+      <button class="filter-btn" data-filter="seen">Vistos</button>
+      <button class="filter-btn" data-filter="watching">Viendo</button>
+      <button class="filter-btn" data-filter="pending">Pendientes</button>
+    </div>
   </div>
 
-  <div id="poster-grid" class="grid gap-3 p-4 sm:p-6" style="grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));"></div>
+  <div id="poster-grid" class="grid gap-3 p-4 sm:p-6 pt-2" style="grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));"></div>
 
   <div id="empty-state" class="empty-state hidden">
     <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="0.8" stroke-linecap="round" stroke-linejoin="round">
       <path d="M7 2v20M17 2v20M2 12h20M2 7h5M17 7h5M2 17h5M17 17h5"/>
       <rect x="2" y="2" width="20" height="20" rx="2"/>
     </svg>
-    <p class="font-michroma text-[0.6rem] tracking-[0.3em] uppercase">sin entradas</p>
-    <p class="text-[0.62rem] font-light tracking-wider" style="color:#2a2a2a;">Pulsa la lupa para añadir tu primera película o serie</p>
+    <p id="empty-title" class="font-michroma text-[0.6rem] tracking-[0.3em] uppercase">sin entradas</p>
+    <p id="empty-desc" class="text-[0.62rem] font-light tracking-wider" style="color:#2a2a2a;">Pulsa “Añadir” para sumar tu primera película o serie</p>
   </div>
 </main>
 
@@ -494,7 +601,16 @@
           <p id="modal-type" class="text-[0.52rem] font-montserrat font-500 tracking-[0.2em] uppercase mb-2" style="color:#6b6b6b;"></p>
           <h2 id="modal-title" class="font-montserrat font-semibold text-sm text-snow leading-tight mb-1"></h2>
           <p id="modal-year" class="text-[0.65rem] font-light text-dim tracking-wider mb-3"></p>
-          <div id="modal-stars" class="text-accent text-sm tracking-widest mb-4"></div>
+          <div class="flex items-center gap-1 mb-1">
+            <label class="text-[0.55rem] text-dim uppercase tracking-widest mr-1">Nota</label>
+            <div id="modal-star-input" class="flex">
+              <button class="star-btn" data-star="1" aria-label="1 estrella">★</button>
+              <button class="star-btn" data-star="2" aria-label="2 estrellas">★</button>
+              <button class="star-btn" data-star="3" aria-label="3 estrellas">★</button>
+              <button class="star-btn" data-star="4" aria-label="4 estrellas">★</button>
+              <button class="star-btn" data-star="5" aria-label="5 estrellas">★</button>
+            </div>
+          </div>
         </div>
         <div>
           <label class="text-[0.55rem] text-dim uppercase tracking-widest block mb-1">Estado</label>
@@ -540,7 +656,10 @@
   </div>
 </div>
 
-<div id="toast" role="status" aria-live="polite"></div>
+<div id="toast" role="status" aria-live="polite">
+  <span id="toast-msg"></span>
+  <button id="toast-action" class="hidden"></button>
+</div>
 
 <script>
 'use strict';
@@ -561,11 +680,21 @@ const TMDB_IMG_SM = 'https://image.tmdb.org/t/p/w92';
 
 let entries       = [];
 let currentFilter = 'all';
+let currentSort   = 'recent';
+let currentSearchQuery = '';
 let selectedMovie = null;
 let selectedRating = 0;
+let modalRating   = 0;
 let searchTimer   = null;
 let pinCallback   = null;
 let activeModalId = null;
+let toastHideTimer = null;
+const pendingDeleteIds = new Set();
+const pendingDeleteTimers = {};
+
+function normalize(str) {
+  return (str || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+}
 
 let db = null;
 try {
@@ -576,14 +705,31 @@ try {
 }
 
 function showToast(msg, duration = 2400) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), duration);
+  renderToast(msg, null, duration);
 }
+function showUndoToast(msg, onUndo, duration = 5000) {
+  renderToast(msg, onUndo, duration);
+}
+function renderToast(msg, onUndo, duration) {
+  const t = document.getElementById('toast');
+  const actionBtn = document.getElementById('toast-action');
+  document.getElementById('toast-msg').textContent = msg;
+  if (onUndo) {
+    actionBtn.textContent = 'Deshacer';
+    actionBtn.classList.remove('hidden');
+    actionBtn.onclick = () => { onUndo(); hideToast(); };
+  } else {
+    actionBtn.classList.add('hidden');
+    actionBtn.onclick = null;
+  }
+  t.classList.add('show');
+  clearTimeout(toastHideTimer);
+  toastHideTimer = setTimeout(hideToast, duration);
+}
+function hideToast() { document.getElementById('toast').classList.remove('show'); }
 
-function starsStr(n) { return '★'.repeat(n) + '☆'.repeat(5 - n); }
 function statusLabel(s) { return { seen: 'Visto', watching: 'Viendo', pending: 'Pendiente' }[s] || s; }
+function escapeHtml(str) { return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function uuid() { return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => (Math.random()*16|0).toString(16)); }
 
 function saveLocal() { localStorage.setItem('cinelog_entries', JSON.stringify(entries)); }
@@ -660,7 +806,7 @@ function renderSuggestions(results) {
   const box = document.getElementById('suggestions');
   if (!results.length) { box.innerHTML = '<p class="px-6 py-4 text-[0.7rem] text-dim">Sin resultados</p>'; box.classList.remove('hidden'); return; }
   box.innerHTML = results.slice(0, 8).map(r => {
-    const title = r.media_type === 'movie' ? r.title : r.name;
+    const title = escapeHtml(r.media_type === 'movie' ? r.title : r.name);
     const year = (r.release_date || r.first_air_date || '').slice(0, 4);
     const type = r.media_type === 'movie' ? 'Película' : 'Serie';
     const thumb = r.poster_path ? `${TMDB_IMG_SM}${r.poster_path}` : '';
@@ -714,11 +860,14 @@ document.getElementById('suggestions').addEventListener('click', async e => {
   } catch { showToast('Error de carga'); } finally { document.getElementById('search-spinner').classList.add('hidden'); }
 });
 
-function resetStars() { document.querySelectorAll('.star-btn').forEach(b => b.classList.remove('active')); selectedRating = 0; document.getElementById('save-btn').disabled = true; }
+function setStarsUI(containerSelector, rating) {
+  document.querySelectorAll(`${containerSelector} .star-btn`).forEach(b => b.classList.toggle('active', parseInt(b.dataset.star) <= rating));
+}
+function resetStars() { setStarsUI('#star-input', 0); selectedRating = 0; document.getElementById('save-btn').disabled = true; }
 document.getElementById('star-input').addEventListener('click', e => {
   const btn = e.target.closest('.star-btn'); if (!btn) return;
-  const n = parseInt(btn.dataset.star); selectedRating = n;
-  document.querySelectorAll('.star-btn').forEach(b => b.toggle('active', parseInt(b.dataset.star) <= n));
+  selectedRating = parseInt(btn.dataset.star);
+  setStarsUI('#star-input', selectedRating);
   document.getElementById('save-btn').disabled = !selectedMovie;
 });
 
@@ -741,24 +890,92 @@ function closeSearch() { document.getElementById('search-panel').classList.remov
 document.getElementById('toggle-search').addEventListener('click', () => { const p = document.getElementById('search-panel'); p.classList.contains('open') ? closeSearch() : openSearch(); });
 document.getElementById('close-search').addEventListener('click', closeSearch);
 
+document.getElementById('collection-search').addEventListener('input', e => {
+  currentSearchQuery = e.target.value;
+  document.getElementById('clear-collection-search').classList.toggle('hidden', !currentSearchQuery);
+  renderGrid();
+});
+document.getElementById('clear-collection-search').addEventListener('click', () => {
+  const input = document.getElementById('collection-search');
+  input.value = ''; currentSearchQuery = '';
+  document.getElementById('clear-collection-search').classList.add('hidden');
+  renderGrid(); input.focus();
+});
+document.getElementById('sort-select').addEventListener('change', e => { currentSort = e.target.value; renderGrid(); });
+
 function setFilter(f) { currentFilter = f; document.querySelectorAll('.filter-btn').forEach(b => b.classList.toggle('active', b.dataset.filter === f)); renderGrid(); }
 document.querySelectorAll('.filter-btn').forEach(b => b.addEventListener('click', () => setFilter(b.dataset.filter)));
 
+const FILTER_LABELS = { all: 'Todos', seen: 'Vistos', watching: 'Viendo', pending: 'Pendientes' };
+function updateFilterCounts(active) {
+  const counts = { all: active.length, seen: 0, watching: 0, pending: 0 };
+  active.forEach(e => { if (counts[e.status] !== undefined) counts[e.status]++; });
+  document.querySelectorAll('.filter-btn').forEach(b => {
+    const f = b.dataset.filter;
+    b.textContent = `${FILTER_LABELS[f]} (${counts[f]})`;
+  });
+}
+
+function sortEntries(list) {
+  const arr = [...list];
+  switch (currentSort) {
+    case 'rating_desc': arr.sort((a, b) => b.rating - a.rating || new Date(b.created_at) - new Date(a.created_at)); break;
+    case 'year_desc':   arr.sort((a, b) => (parseInt(b.year) || 0) - (parseInt(a.year) || 0)); break;
+    case 'alpha':       arr.sort((a, b) => a.title.localeCompare(b.title, 'es', { sensitivity: 'base' })); break;
+    default:            arr.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+  }
+  return arr;
+}
+
 function renderGrid() {
   const grid = document.getElementById('poster-grid'); const empty = document.getElementById('empty-state');
-  const filtered = currentFilter === 'all' ? entries : entries.filter(e => e.status === currentFilter);
-  document.getElementById('entry-count').textContent = `— ${entries.length} entrada${entries.length !== 1 ? 's' : ''}`;
-  if (!filtered.length) { grid.innerHTML = ''; empty.classList.remove('hidden'); return; }
+  const active = entries.filter(e => !pendingDeleteIds.has(e.id));
+
+  document.getElementById('entry-count').textContent = `— ${active.length} entrada${active.length !== 1 ? 's' : ''}`;
+  updateFilterCounts(active);
+
+  let list = currentFilter === 'all' ? active : active.filter(e => e.status === currentFilter);
+  if (currentSearchQuery.trim()) {
+    const q = normalize(currentSearchQuery);
+    list = list.filter(e => normalize(e.title).includes(q));
+  }
+  list = sortEntries(list);
+
+  if (!list.length) {
+    grid.innerHTML = '';
+    empty.classList.remove('hidden');
+    const hasAnyEntries = active.length > 0;
+    document.getElementById('empty-title').textContent = hasAnyEntries ? 'sin resultados' : 'sin entradas';
+    document.getElementById('empty-desc').textContent = hasAnyEntries
+      ? 'Prueba a cambiar el filtro o la búsqueda'
+      : 'Pulsa “Añadir” para sumar tu primera película o serie';
+    return;
+  }
   empty.classList.add('hidden');
-  grid.innerHTML = filtered.map((e, i) => {
-    const img = e.poster_url ? `<img src="${e.poster_url}" alt="${e.title}" loading="lazy"/>` : '<div class="no-poster"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="0.8"><rect x="2" y="2" width="20" height="20" rx="2"/><path d="M7 2v20M17 2v20M2 12h20"/></svg></div>';
-    return `<div class="poster-card card-anim" data-id="${e.id}" style="animation-delay:${Math.min(i*30, 300)}ms" tabindex="0" role="button">
+  grid.innerHTML = list.map((e, i) => {
+    const safeTitle = escapeHtml(e.title);
+    const img = e.poster_url ? `<img src="${e.poster_url}" alt="${safeTitle}" loading="lazy"/>` : '<div class="no-poster"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="0.8"><rect x="2" y="2" width="20" height="20" rx="2"/><path d="M7 2v20M17 2v20M2 12h20"/></svg></div>';
+    return `<div class="poster-card card-anim" data-id="${e.id}" style="animation-delay:${Math.min(i*30, 300)}ms" tabindex="0" role="button" aria-label="${safeTitle}, ${statusLabel(e.status)}, ${e.rating} de 5 estrellas">
       ${img}<span class="status-badge ${e.status}">${statusLabel(e.status)}</span>
-      <div class="overlay"><h3>${e.title}</h3><p class="meta">${e.year}${e.type==='tv'?' · Serie':''}</p><div class="stars">${'★'.repeat(e.rating)}</div></div>
+      <div class="overlay"><h3>${safeTitle}</h3><p class="meta">${e.year}${e.type==='tv'?' · Serie':''}</p><div class="stars">${'★'.repeat(e.rating)}</div></div>
     </div>`;
   }).join('');
   grid.querySelectorAll('.poster-card').forEach(c => c.addEventListener('click', () => openModal(c.dataset.id)));
 }
+
+document.getElementById('poster-grid').addEventListener('keydown', e => {
+  if (e.key !== 'Enter' && e.key !== ' ') return;
+  const card = e.target.closest('.poster-card'); if (!card) return;
+  e.preventDefault();
+  openModal(card.dataset.id);
+});
+
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Escape') return;
+  if (document.getElementById('pin-modal').classList.contains('open')) { closePin(); return; }
+  if (document.getElementById('detail-modal').classList.contains('open')) { closeModal(); return; }
+  if (document.getElementById('search-panel').classList.contains('open')) { closeSearch(); return; }
+});
 
 function openModal(id) {
   const e = entries.find(x => x.id === id); if (!e) return; activeModalId = id;
@@ -766,28 +983,53 @@ function openModal(id) {
   document.getElementById('modal-type').textContent = e.type === 'movie' ? 'Película' : 'Serie';
   document.getElementById('modal-title').textContent = e.title;
   document.getElementById('modal-year').textContent = e.year || '—';
-  document.getElementById('modal-stars').textContent = starsStr(e.rating);
+  modalRating = e.rating; setStarsUI('#modal-star-input', modalRating);
   document.getElementById('modal-desc').textContent = e.description || '';
   document.getElementById('modal-status').value = e.status;
   document.getElementById('detail-modal').classList.add('open');
 }
 function closeModal() { document.getElementById('detail-modal').classList.remove('open'); activeModalId = null; }
 document.getElementById('modal-close').addEventListener('click', closeModal);
+document.getElementById('modal-star-input').addEventListener('click', e => {
+  const btn = e.target.closest('.star-btn'); if (!btn) return;
+  modalRating = parseInt(btn.dataset.star);
+  setStarsUI('#modal-star-input', modalRating);
+});
 
 document.getElementById('modal-save').addEventListener('click', () => {
   if (!activeModalId) return;
   openPin(async () => {
-    const s = document.getElementById('modal-status').value; const e = entries.find(x => x.id === activeModalId);
-    if (!e) return; e.status = s; saveLocal(); renderGrid(); await updateInSupabase(activeModalId, { status: s }); showToast('Actualizado'); closeModal();
+    const s = document.getElementById('modal-status').value; const r = modalRating;
+    const e = entries.find(x => x.id === activeModalId);
+    if (!e) return; e.status = s; e.rating = r; saveLocal(); renderGrid();
+    await updateInSupabase(activeModalId, { status: s, rating: r });
+    showToast('Actualizado'); closeModal();
   });
 });
 
 document.getElementById('modal-delete').addEventListener('click', () => {
   if (!activeModalId) return;
-  openPin(async () => {
-    entries = entries.filter(x => x.id !== activeModalId); saveLocal(); renderGrid(); await deleteFromSupabase(activeModalId); showToast('Eliminado'); closeModal();
-  });
+  const idToDelete = activeModalId;
+  openPin(() => { closeModal(); softDelete(idToDelete); });
 });
+
+function softDelete(id) {
+  pendingDeleteIds.add(id);
+  renderGrid();
+  showUndoToast('Entrada eliminada', () => {
+    pendingDeleteIds.delete(id);
+    clearTimeout(pendingDeleteTimers[id]);
+    delete pendingDeleteTimers[id];
+    renderGrid();
+  }, 5000);
+  pendingDeleteTimers[id] = setTimeout(async () => {
+    pendingDeleteIds.delete(id);
+    delete pendingDeleteTimers[id];
+    entries = entries.filter(x => x.id !== id);
+    saveLocal(); renderGrid();
+    await deleteFromSupabase(id);
+  }, 5000);
+}
 
 document.getElementById('export-btn').addEventListener('click', () => {
   if (!entries.length) return;
